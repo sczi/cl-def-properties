@@ -371,7 +371,7 @@ the CADR of the list."
             ((and reader writer)
              `((:reader . ,reader) (:writer . ,writer)))))))
 
-(defun load-slots (class)
+(defun load-slots (class allocation-type)
   (closer-mop:ensure-finalized class)
   (flet ((load-slot (slot)
            (list (cons :name (string (closer-mop:slot-definition-name slot)))
@@ -383,13 +383,16 @@ the CADR of the list."
                  (cons :accessors (let ((accessor-list (accessor-properties class slot)))
                                     (when accessor-list
                                       (list accessor-list)))))))
-    (mapcar #'load-slot (closer-mop:class-slots class))))
+    (loop for slot in (closer-mop:class-slots class)
+          when (eq allocation-type (closer-mop:slot-definition-allocation slot))
+            collect (load-slot slot))))
 
 (defun class-properties (class-name &optional shallow)
   (let ((cl (find-class class-name)))
     (list (cons :name          (class-name cl))
           (cons :documentation (documentation cl 'type))
-          (unless shallow (cons :slots (load-slots cl)))
+          (unless shallow (cons :instance-slots (load-slots cl :instance)))
+          (unless shallow (cons :class-slots (load-slots cl :class)))
           (unless shallow (cons :methods (specialisation-properties cl)))
           (unless shallow (cons :class-precedence-list (mapcar 'class-name (find-superclasses cl))))
           (unless shallow (cons :direct-superclasses (mapcar 'class-name (closer-mop:class-direct-superclasses cl))))
