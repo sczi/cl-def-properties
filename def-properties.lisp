@@ -371,6 +371,15 @@ the CADR of the list."
             ((and reader writer)
              `((:reader . ,reader) (:writer . ,writer)))))))
 
+(defun slot-defined-in (class slot)
+  "Return the ancestor of CLASS where SLOT was defined, or nil for direct slots."
+  (loop for ancestor in (rest (closer-mop:class-precedence-list class))
+        when (find (closer-mop:slot-definition-name slot)
+                   (closer-mop:class-direct-slots ancestor)
+                   :key #'closer-mop:slot-definition-name)
+          return `((:name . ,(symbol-name (class-name ancestor)))
+                   (:symbol . ,(class-name ancestor)))))
+
 (defun load-slots (class allocation-type)
   (closer-mop:ensure-finalized class)
   (flet ((load-slot (slot)
@@ -378,6 +387,7 @@ the CADR of the list."
                  (cons :documentation (swank-mop:slot-definition-documentation slot))
                  (when (swank-mop:slot-definition-documentation slot)
                    (cons :parsed-documentation (parse-docstring (swank-mop:slot-definition-documentation slot) nil :package (symbol-package (class-name class)))))
+                 (cons :defined-in (slot-defined-in class slot))
                  ;; The LIST call below is because the accessor lookup is wrapped
                  ;; in a FOR statement in the template.
                  (cons :accessors (let ((accessor-list (accessor-properties class slot)))
