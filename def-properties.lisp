@@ -307,7 +307,7 @@ the CADR of the list."
               when (and (not (member symbol ignored))
                         (or include-internal
                             (symbol-external-p symbol (symbol-package (class-name class)))))
-                collect (list (cons :name (symbol-name symbol))
+                collect (list (cons :name (princ-to-string symbol))
                               (cons :symbol symbol)
                               (cons :documentation (documentation symbol 'function))))
             #'string< :key (alexandria:compose #'princ-to-string #'assoc-name)))))
